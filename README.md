@@ -10,42 +10,95 @@ Our dataset is compiled from publicly available data from nature.com and encompa
 
 ### Connection details for a database client 
 
-Host/Server: 	112.213.86.31
-Port: 	3360
-Username:	marshmallow
-Password:	N3unkNbXQYh33og
-Database:	carbon_emissions
+|Host/Server: |112.213.86.31 |
+| --- | --- |
+|Port  |3360|
+|Username  |marshmallow  |
+|Password  |N3unkNbXQYh33og  |
+|Database |carbon_emissions  |
 
-2. Mining (use queries)
+
+## B - Mining (use queries)
 2.1 data patterns
 missing, dups?, value of group by
 (null ,N/A)
 CONSISTENCY of format
 2.2 soulitons in case of missing, duplicates ...
 
-3. findings
-3.1
-3.2
-most contribution carbon emmissions products
-avg. sum: carbon
-product name
+## C - Findings
+	From the database, some of the findings could be considered from answers for these questions: 
 
-4. limitation (3-4 lines)
-giới hạn về nghiên cứu như thế nào, data chỉ cso sample 1000 dòng và không đại diện cho tất cả các case trong thực tế 
-future proposal (trong tương lai có thể improve như nào)
-
-5. conclusion (5-6 lines của summary findings)
-
-# Questions to research
-1. Which products contribute the most to carbon emissions?
+### 1. Which products contribute the most to carbon emissions?
 
 ```SQL
-SELECT
-FROM
-WHERE
+select id, product_name, weight_kg, carbon_footprint_pcf
+from product_emissions
+order by carbon_footprint_pcf desc
+limit 5
 ```
+#### Result:
+
+| id           | product_name                                                       | weight_kg | carbon_footprint_pcf | 
+| -----------: | -----------------------------------------------------------------: | --------: | -------------------: | 
+| 22917-4-2015 | Wind Turbine G128 5 Megawats                                       | 600000    | 3718044              | 
+| 22917-5-2015 | Wind Turbine G132 5 Megawats                                       | 600000    | 3276187              | 
+| 22917-3-2015 | Wind Turbine G114 2 Megawats                                       | 400000    | 1532608              | 
+| 22917-2-2015 | Wind Turbine G90 2 Megawats                                        | 361000    | 1251625              | 
+| 8362-1-2016  | Land Cruiser Prado. FJ Cruiser. Dyna trucks. Toyoace.IMV def unit. | 2272.33   | 191687               | 
+
 
 ### 2. What are the industry groups of these products?
+
+Let's take a look into the top 10 products contributing the most to the carbon emmision and their industry groups.
+
+```SQL
+SELECT pe.id, pe.product_name, pe.industry_group_id, ig.industry_group, pe.weight_kg, pe.carbon_footprint_pcf
+FROM product_emissions pe
+LEFT JOIN industry_groups ig ON pe.industry_group_id = ig.id
+ORDER BY pe.carbon_footprint_pcf DESC
+LIMIT 10
+```
+#### Result:
+| id           | product_name                                                                                                                       | industry_group_id | industry_group                     | weight_kg | carbon_footprint_pcf | 
+| -----------: | ---------------------------------------------------------------------------------------------------------------------------------: | ----------------: | ---------------------------------: | --------: | -------------------: | 
+| 22917-4-2015 | Wind Turbine G128 5 Megawats                                                                                                       | 13                | Electrical Equipment and Machinery | 600000    | 3718044              | 
+| 22917-5-2015 | Wind Turbine G132 5 Megawats                                                                                                       | 13                | Electrical Equipment and Machinery | 600000    | 3276187              | 
+| 22917-3-2015 | Wind Turbine G114 2 Megawats                                                                                                       | 13                | Electrical Equipment and Machinery | 400000    | 1532608              | 
+| 22917-2-2015 | Wind Turbine G90 2 Megawats                                                                                                        | 13                | Electrical Equipment and Machinery | 361000    | 1251625              | 
+| 8362-1-2016  | Land Cruiser Prado. FJ Cruiser. Dyna trucks. Toyoace.IMV def unit.                                                                 | 7                 | Automobiles & Components           | 2272.33   | 191687               | 
+| 904-2-2013   | Retaining wall structure with a main wall (sheet pile): 136 tonnes of steel sheet piles and 4 tonnes of tierods per 100 meter wall | 19                | Materials                          | 140000    | 167000               | 
+| 12134-8-2017 | TCDE                                                                                                                               | 19                | Materials                          | 12000     | 99075                | 
+| 12134-8-2017 | TCDE                                                                                                                               | 19                | Materials                          | 12000     | 99075                | 
+| 4235-30-2016 | Mercedes-Benz GLE (GLE 500 4MATIC)                                                                                                 | 7                 | Automobiles & Components           | 3500      | 91000                | 
+| 20527-1-2014 | Electric Motor                                                                                                                     | 8                 | Capital Goods                      | 90        | 87589                | 
+
+Base on the analytics, the top 10 industry groups that contributing to the emission the most shall be :
+
+```SQL
+/* Find 10 groups that have biggiest average carbon footprint */
+
+SELECT  pe.product_name, pe.industry_group_id, ig.industry_group, pe.weight_kg, AVG(pe.carbon_footprint_pcf)
+FROM product_emissions pe
+LEFT JOIN industry_groups ig ON pe.industry_group_id = ig.id
+GROUP BY ig.industry_group
+ORDER BY 5 DESC
+LIMIT 10
+```
+
+#### Result:
+
+| product_name                                                                                                                                                                                                                                                                                                                                                                            | industry_group_id | industry_group                                   | weight_kg    | AVG(pe.carbon_footprint_pcf) | 
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | ----------------: | -----------------------------------------------: | -----------: | ---------------------------: | 
+| ACTI9 IID K 2P 40A 30MA AC-TYPE RESIDUAL CURRENT CIRCUIT BREAKER                                                                                                                                                                                                                                                                                                                        | 13                | Electrical Equipment and Machinery               | 0.21         | 891050.7273                  | 
+| VW Polo V 1.6 TDI BlueMotion Technology                                                                                                                                                                                                                                                                                                                                                 | 7                 | Automobiles & Components                         | 993          | 35373.4795                   | 
+| Alliance HPLC (High Peformance Liquid Chromatography)  The Alliance is an HPLC that is unique in that it has a single set of electronic boards that control the functions for both the solvent delivery system and the autosampler in the liquid chromatograph.                                                                                                                         | 5                 | "Pharmaceuticals, Biotechnology & Life Sciences" | 59           | 24162.0000                   | 
+| Office Chair                                                                                                                                                                                                                                                                                                                                                                            | 8                 | Capital Goods                                    | 20.68        | 7391.7714                    | 
+| KURALON  fiber                                                                                                                                                                                                                                                                                                                                                                          | 19                | Materials                                        | 1500         | 3208.8611                    | 
+| Hot Rolled Steel (HR)                                                                                                                                                                                                                                                                                                                                                                   | 4                 | "Mining - Iron, Aluminum, Other Metals"          | 1000         | 2727.0000                    | 
+| Natural Gas                                                                                                                                                                                                                                                                                                                                                                             | 14                | Energy                                           | 0.0012701804 | 2154.8000                    | 
+| Mobile Batteries                                                                                                                                                                                                                                                                                                                                                                        | 9                 | Chemicals                                        | 1000         | 1949.0313                    | 
+| "Bloomberg's standard-issue flat panel configuration (prior to 2010) was two 19\" panels mounted on a metal stand. In early 2010 Bloomberg engaged in the WRI Product Life Cycle Roadtest for this functional unit (cradle-to-grave). The functional unit has a lifespan of 5 years, so the emissions indicated [in this report] are the full emissions associated with that lifespan." | 20                | Media                                            | 14.6         | 1534.4667                    | 
+| USB software                                                                                                                                                                                                                                                                                                                                                                            | 24                | Software & Services                              | 0.0085       | 1368.9412                    | 
    
 ### 3. What are the industries with the highest contribution to carbon emissions?
 
@@ -104,7 +157,6 @@ limit 10
 ```
 #### Result: 
 
-
 | country_name | sum(carbon_footprint_pcf) | 
 | -----------: | ------------------------: | 
 | Germany      | 9778464                   | 
@@ -117,6 +169,8 @@ limit 10
 | France       | 21364                     | 
 | Italy        | 20000                     | 
 | Ireland      | 11160                     | 
+
+German seems to be the one with highest carbon emission level.
 
 ### 6.What is the trend of carbon footprints (PCFs) over the years?
 
@@ -146,6 +200,131 @@ On the otherhand, if we look into the avarage carbon footprints over the years, 
 | 2016 | 6891.5210                 | 
 | 2017 | 4050.8452                 | 
 
-
+2015 faced the largest annual increase during the period from 2013 until 2017. Some of the reasons that leads to this result might be considered are : El Niño phenomina, high consumption of fossil fuels in industrial activities. El Niño often leads to an expansion of global drought area, an increase in tropical forest fires, and other landscape changes that boost atmospheric carbon dioxide levels. According to the research of scientists, one of the thinkable cause of carbon dixide increasement is the fourfold increase in human emissions from fossil fuel combustion and cement production. 
 
 ### 7. Which industry groups has demonstrated the most notable decrease in carbon footprints (PCFs) over time?
+
+From the findings in questions 2 and analytics of this dataset, we can investigate the decrease in carbon footprint of top 10 groups over time as below:
+
+```sql
+SELECT year, industry_group, sum(carbon_footprint_pcf) as total_carbon
+FROM product_emissions pe
+	LEFT JOIN industry_groups ig
+		ON pe.industry_group_id = ig.id
+WHERE industry_group = "Electrical Equipment and Machinery"
+GROUP BY year
+ORDER BY year ASC
+```
+
+#### Result:
+
+Electrical Equipment and Machinery:
+
+| year | industry_group                     | total_carbon | 
+| ---: | ---------------------------------: | -----------: | 
+| 2015 | Electrical Equipment and Machinery | 9801558      | 
+
+Automobiles & Components
+
+| year | industry_group           | total_carbon | 
+| ---: | -----------------------: | -----------: | 
+| 2013 | Automobiles & Components | 130189       | 
+| 2014 | Automobiles & Components | 230015       | 
+| 2015 | Automobiles & Components | 817227       | 
+| 2016 | Automobiles & Components | 1404833      | 
+
+Pharmaceuticals, Biotechnology & Life Sciences:
+
+```sql
+SELECT year, industry_group, sum(carbon_footprint_pcf) as total_carbon
+FROM product_emissions pe
+	LEFT JOIN industry_groups ig
+		ON pe.industry_group_id = ig.id
+WHERE industry_group LIKE "%Pharmaceuticals%"
+GROUP BY year
+ORDER BY year ASC
+```
+
+| year | industry_group                                   | total_carbon | 
+| ---: | -----------------------------------------------: | -----------: | 
+| 2013 | "Pharmaceuticals, Biotechnology & Life Sciences" | 32271        | 
+| 2014 | "Pharmaceuticals, Biotechnology & Life Sciences" | 40215        | 
+
+Capital Goods:
+
+| year | industry_group | total_carbon | 
+| ---: | -------------: | -----------: | 
+| 2013 | Capital Goods  | 60190        | 
+| 2014 | Capital Goods  | 93699        | 
+| 2015 | Capital Goods  | 3505         | 
+| 2016 | Capital Goods  | 6369         | 
+| 2017 | Capital Goods  | 94949        | 
+
+Materials
+
+| year | industry_group | total_carbon | 
+| ---: | -------------: | -----------: | 
+| 2013 | Materials      | 200513       | 
+| 2014 | Materials      | 75678        | 
+| 2016 | Materials      | 88267        | 
+| 2017 | Materials      | 213137       | 
+
+Mining - Iron, Aluminum, Other Metals :
+
+```SQL
+SELECT year, industry_group, sum(carbon_footprint_pcf) as total_carbon
+FROM product_emissions pe
+	LEFT JOIN industry_groups ig
+		ON pe.industry_group_id = ig.id
+WHERE industry_group LIKE "%Other Metals%"
+GROUP BY year
+ORDER BY year ASC
+```
+
+| year | industry_group                          | total_carbon | 
+| ---: | --------------------------------------: | -----------: | 
+| 2015 | "Mining - Iron, Aluminum, Other Metals" | 8181         | 
+
+
+Energy:
+
+| year | industry_group | total_carbon | 
+| ---: | -------------: | -----------: | 
+| 2013 | Energy         | 750          | 
+| 2016 | Energy         | 10024        | 
+
+Chemicals: 
+
+| year | industry_group | total_carbon | 
+| ---: | -------------: | -----------: | 
+| 2015 | Chemicals      | 62369        | 
+
+Media:
+
+| year | industry_group | total_carbon | 
+| ---: | -------------: | -----------: | 
+| 2013 | Media          | 9645         | 
+| 2014 | Media          | 9645         | 
+| 2015 | Media          | 1919         | 
+| 2016 | Media          | 1808         | 
+
+Software & Services:
+
+| year | industry_group      | total_carbon | 
+| ---: | ------------------: | -----------: | 
+| 2013 | Software & Services | 6            | 
+| 2014 | Software & Services | 146          | 
+| 2015 | Software & Services | 22856        | 
+| 2016 | Software & Services | 22846        | 
+| 2017 | Software & Services | 690          | 
+
+
+most contribution carbon emmissions products
+avg. sum: carbon
+product name
+
+# D - Limitation (3-4 lines)
+giới hạn về nghiên cứu như thế nào, data chỉ cso sample 1000 dòng và không đại diện cho tất cả các case trong thực tế 
+future proposal (trong tương lai có thể improve như nào)
+
+# E - Conclusion (5-6 lines của summary findings)
